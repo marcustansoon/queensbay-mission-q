@@ -12,7 +12,8 @@ DFRobotDFPlayerMini player;
 
 // Input port configuration
 static const uint8_t PIN_D12 = 12; // Play song when PIN_D12 is 0 V (grounded)
-int isPlaying = 0;
+bool isMusicPlaying = false;
+static const bool playOnce = true; // Indicate whether song can only be played once
 
 void setup() {
   pinMode(PIN_D12, INPUT);           // Set pin to input
@@ -42,9 +43,9 @@ void setup() {
 }
 
 void loop() {
-  if(digitalRead(PIN_D12) == LOW && !isPlaying) {
+  if(digitalRead(PIN_D12) == LOW && !isMusicPlaying) {
     Serial.println("Playing song...");
-    isPlaying = true;
+    isMusicPlaying = true;
     // Play the first MP3 file on the SD card
     player.play(1);
   }
@@ -80,7 +81,7 @@ void printDetail(uint8_t type, int value){
       Serial.print(F("Number:"));
       Serial.print(value);
       Serial.println(F(" Play Finished!"));
-      isPlaying = false;
+      isMusicPlaying = playOnce;
       break;
     case DFPlayerError:
       Serial.print(F("DFPlayerError:"));
