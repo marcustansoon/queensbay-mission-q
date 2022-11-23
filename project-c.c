@@ -10,7 +10,14 @@ SoftwareSerial softwareSerial(PIN_MP3_RX, PIN_MP3_TX);
 // Create the Player object
 DFRobotDFPlayerMini player;
 
+// Input port configuration
+static const uint8_t PIN_D12 = 12; // Play song when PIN_D12 is 0 V (grounded)
+int isPlaying = 0;
+
 void setup() {
+  pinMode(PIN_D12, INPUT);           // Set pin to input
+  digitalWrite(PIN_D12, HIGH);       // Turn on pullup resistors
+
   // Delay for 5 seconds
   delay(1000 * 5);
 
@@ -25,9 +32,7 @@ void setup() {
     // Set volume to maximum (0 to 30).
     player.volume(30);
     // Enable music loop
-    player.enableLoop();
-    // Play the first MP3 file on the SD card
-    player.play(1);
+    // player.enableLoop();
   } else {
     Serial.println("Connecting to DFPlayer Mini failed!");
     Serial.println("1.Please recheck the connection!");
@@ -37,6 +42,12 @@ void setup() {
 }
 
 void loop() {
+  if(digitalRead(PIN_D12) == LOW && !isPlaying) {
+    Serial.println("Playing song...");
+    isPlaying = true;
+    // Play the first MP3 file on the SD card
+    player.play(1);
+  }
   if (player.available()) {
     printDetail(player.readType(), player.read()); //Print the detail message from DFPlayer to handle different errors and states.
   }
@@ -69,6 +80,7 @@ void printDetail(uint8_t type, int value){
       Serial.print(F("Number:"));
       Serial.print(value);
       Serial.println(F(" Play Finished!"));
+      isPlaying = false;
       break;
     case DFPlayerError:
       Serial.print(F("DFPlayerError:"));
