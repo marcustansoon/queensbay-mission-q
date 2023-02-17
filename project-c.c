@@ -14,13 +14,14 @@ DFRobotDFPlayerMini player;
 static const uint8_t PIN_D12 = 12; // Play song when PIN_D12 is 0 V (grounded)
 bool isMusicPlaying = false;
 static const bool playOnce = true; // Indicate whether song can only be played once
+int currentMusic = 1; // 1-> background, 2-> siren, 3-> play music on another room (after wall push)
 
 void setup() {
   pinMode(PIN_D12, INPUT);           // Set pin to input
   digitalWrite(PIN_D12, HIGH);       // Turn on pullup resistors
 
-  // Delay for 5 seconds
-  delay(1000 * 5);
+  // Delay for 2 seconds
+  delay(1000 * 2);
 
   // Init USB serial port for debugging
   Serial.begin(9600);
@@ -31,7 +32,7 @@ void setup() {
   if (player.begin(softwareSerial)) {
    Serial.println("OK");
     // Set volume to maximum (0 to 30).
-    player.volume(30);
+    player.volume(10);
     // Enable music loop
     // player.enableLoop();
   } else {
@@ -43,12 +44,19 @@ void setup() {
 }
 
 void loop() {
-  if(digitalRead(PIN_D12) == LOW && !isMusicPlaying) {
-    Serial.println("Playing song...");
-    isMusicPlaying = true;
-    // Play the first MP3 file on the SD card
-    player.play(1);
-  }
+    // If button is pressed and bg music is currently playing
+    if(digitalRead(PIN_D12) == LOW && currentMusic == 1){
+      currentMusic = 2; // Play siren
+      player.play(3);
+      Serial.println("Playing 3rd song...");
+    }
+    // Play the first MP3 file (bg music) on the SD card
+    else if(currentMusic == 1 && !isMusicPlaying){
+      player.play(1);    
+      isMusicPlaying = 1; 
+      Serial.println("Playing bg song...");
+    }
+  
   if (player.available()) {
     printDetail(player.readType(), player.read()); //Print the detail message from DFPlayer to handle different errors and states.
   }
@@ -81,7 +89,7 @@ void printDetail(uint8_t type, int value){
       Serial.print(F("Number:"));
       Serial.print(value);
       Serial.println(F(" Play Finished!"));
-      isMusicPlaying = playOnce;
+      isMusicPlaying = 0;
       break;
     case DFPlayerError:
       Serial.print(F("DFPlayerError:"));
