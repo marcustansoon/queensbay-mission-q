@@ -174,7 +174,7 @@ void printDetail(uint8_t type, int value) {
       Serial.print(F("Number:"));
       Serial.print(value);
       Serial.println(F(" Play Finished!"));
-      isMusicPlaying = 0;
+      isMusicPlaying = false;
       break;
     case DFPlayerError:
       Serial.print(F("DFPlayerError:"));
