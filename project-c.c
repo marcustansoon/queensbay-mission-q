@@ -3,18 +3,17 @@
 #include "DFRobotDFPlayerMini.h"
 
 // Use pins 2 and 3 to communicate with DFPlayer Mini
-static const uint8_t PIN_MP3_TX = 2; // Connects to module's RX 
-static const uint8_t PIN_MP3_RX = 3; // Connects to module's TX 
+static const uint8_t PIN_MP3_TX = 2;  // Connects to module's RX
+static const uint8_t PIN_MP3_RX = 3;  // Connects to module's TX
 SoftwareSerial softwareSerial(PIN_MP3_RX, PIN_MP3_TX);
 
 // Create the Player object
 DFRobotDFPlayerMini player;
 
 // Input port configuration
-static const uint8_t PIN_D12 = 12; // Play song when PIN_D12 is 0 V (grounded)
-bool isMusicPlaying = false;
-int currentMusic = 1; // 1-> background, 3-> siren, 2-> Play music on another room (after wall push)
+static const uint8_t PIN_D12 = 12;  // Play song when PIN_D12 is 0 V (grounded)
 
+// State machine states
 enum STATES {
   IDLE,
   PLAY_BACKGROUND_AUDIO_1,
@@ -24,12 +23,22 @@ enum STATES {
   PLAY_BACKGROUND_AUDIO_2,
   WAIT_BACKGROUND_AUDIO_FINISHED
 };
-
 enum STATES currentState = IDLE, nextState = IDLE;
+
+// Audio file numbering in SD card
+enum AUDIO {
+  BACKGROUND_AUDIO = 1,
+  SIREN_AUDIO = 3,
+  ROOM2_AUDIO = 2  
+};
+enum AUDIO currentMusic = BACKGROUND_AUDIO;
+
+// Indicate whether a music is currently playing
+bool isMusicPlaying = false;
 
 void setup() {
   // Set pin to input and pullup by default
-  pinMode(PIN_D12, INPUT_PULLUP);           
+  pinMode(PIN_D12, INPUT_PULLUP);
 
   // Delay for 5 seconds
   delay(1000 * 5);
@@ -42,7 +51,7 @@ void setup() {
 
   // Start communication with DFPlayer Mini
   if (player.begin(softwareSerial)) {
-   Serial.println("OK");
+    Serial.println("OK");
     // Set volume to maximum (0 to 30).
     player.volume(1);
     // Enable music loop
@@ -51,7 +60,8 @@ void setup() {
     Serial.println("Connecting to DFPlayer Mini failed!");
     Serial.println("1.Please recheck the connection!");
     Serial.println("2.Please insert the SD card!");
-    while(1);
+    while (1)
+      ;
   }
 }
 
@@ -62,35 +72,35 @@ void loop() {
   // SM transition definition
   switch (currentState) {
     case IDLE:
-      nextState = PLAY_BACKGROUND_AUDIO_1; 
+      nextState = PLAY_BACKGROUND_AUDIO_1;
       break;
     case PLAY_BACKGROUND_AUDIO_1:
-      nextState = WAIT_SIREN_TRIGGER;  
+      nextState = WAIT_SIREN_TRIGGER;
       break;
     case WAIT_SIREN_TRIGGER:
       // Check if siren button is triggered (active LOW)
-      if(digitalRead(PIN_D12) == LOW)
-        nextState = PLAY_SIREN_AUDIO; 
+      if (digitalRead(PIN_D12) == LOW)
+        nextState = PLAY_SIREN_AUDIO;
       // Repeat background music
-      else if(!isMusicPlaying)
+      else if (!isMusicPlaying)
         nextState = PLAY_BACKGROUND_AUDIO_1;
       break;
     case PLAY_SIREN_AUDIO:
-      nextState = WAIT_SIREN_AUDIO_FINISHED; 
+      nextState = WAIT_SIREN_AUDIO_FINISHED;
       break;
     case WAIT_SIREN_AUDIO_FINISHED:
       // When siren audio is finished playing, play bg music
-      if(!isMusicPlaying)
-        nextState = PLAY_BACKGROUND_AUDIO_2; 
+      if (!isMusicPlaying)
+        nextState = PLAY_BACKGROUND_AUDIO_2;
       else
         nextState = WAIT_SIREN_AUDIO_FINISHED;
       break;
     case PLAY_BACKGROUND_AUDIO_2:
-      nextState = WAIT_BACKGROUND_AUDIO_FINISHED; 
+      nextState = WAIT_BACKGROUND_AUDIO_FINISHED;
       break;
     case WAIT_BACKGROUND_AUDIO_FINISHED:
       // When bg music is finished playing, repeat the bg music
-      if(!isMusicPlaying)
+      if (!isMusicPlaying)
         nextState = PLAY_BACKGROUND_AUDIO_2;
       else
         nextState = WAIT_BACKGROUND_AUDIO_FINISHED;
@@ -105,39 +115,39 @@ void loop() {
     case IDLE:
       break;
     case PLAY_BACKGROUND_AUDIO_1:
-      currentMusic = 1;   // Indicate bg music
-      player.play(1);     // Play bg music   
-      isMusicPlaying = 1; // Indicate music is playing    
-      Serial.println("Playing bg song...");           
+      currentMusic = BACKGROUND_AUDIO;  // Indicate bg music
+      player.play(BACKGROUND_AUDIO);    // Play bg music
+      isMusicPlaying = true;            // Indicate music is playing
+      Serial.println("Playing bg song...");
       break;
-    case WAIT_SIREN_TRIGGER:       
+    case WAIT_SIREN_TRIGGER:
       break;
     case PLAY_SIREN_AUDIO:
-      currentMusic = 3;   // Indicate siren music
-      player.play(3);     // Play siren music   
-      isMusicPlaying = 1; // Indicate music is playing    
-      Serial.println("Playing siren song...");    
+      currentMusic = SIREN_AUDIO;  // Indicate siren music
+      player.play(SIREN_AUDIO);    // Play siren music
+      isMusicPlaying = true;       // Indicate music is playing
+      Serial.println("Playing siren song...");
       break;
     case WAIT_SIREN_AUDIO_FINISHED:
       break;
     case PLAY_BACKGROUND_AUDIO_2:
-      currentMusic = 1;   // Indicate bg music
-      player.play(1);     // Play bg music   
-      isMusicPlaying = 1; // Indicate music is playing    
-      Serial.println("Playing bg song...");    
+      currentMusic = BACKGROUND_AUDIO;  // Indicate bg music
+      player.play(BACKGROUND_AUDIO);    // Play bg music
+      isMusicPlaying = true;            // Indicate music is playing
+      Serial.println("Playing bg song...");
       break;
     case WAIT_BACKGROUND_AUDIO_FINISHED:
       break;
     default:
       break;
   }
-  
+
   if (player.available()) {
-    printDetail(player.readType(), player.read()); //Print the detail message from DFPlayer to handle different errors and states.
+    printDetail(player.readType(), player.read());  //Print the detail message from DFPlayer to handle different errors and states.
   }
 }
 
-void printDetail(uint8_t type, int value){
+void printDetail(uint8_t type, int value) {
   switch (type) {
     case TimeOut:
       Serial.println(F("Time Out!"));
@@ -197,5 +207,4 @@ void printDetail(uint8_t type, int value){
     default:
       break;
   }
-  
 }
