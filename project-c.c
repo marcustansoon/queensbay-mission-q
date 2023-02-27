@@ -53,7 +53,7 @@ void setup() {
   if (player.begin(softwareSerial)) {
     Serial.println("OK");
     // Set volume to maximum (0 to 30).
-    player.volume(1);
+    // player.volume(15);
     // Enable music loop
     // player.enableLoop();
   } else {
@@ -119,6 +119,7 @@ void loop() {
       player.play(BACKGROUND_AUDIO);    // Play bg music
       isMusicPlaying = true;            // Indicate music is playing
       Serial.println("Playing bg song...");
+      player.volume(30);
       break;
     case WAIT_SIREN_TRIGGER:
       break;
@@ -127,6 +128,7 @@ void loop() {
       player.play(SIREN_AUDIO);    // Play siren music
       isMusicPlaying = true;       // Indicate music is playing
       Serial.println("Playing siren song...");
+      player.volume(16);
       break;
     case WAIT_SIREN_AUDIO_FINISHED:
       break;
@@ -135,6 +137,7 @@ void loop() {
       player.play(BACKGROUND_AUDIO);    // Play bg music
       isMusicPlaying = true;            // Indicate music is playing
       Serial.println("Playing bg song...");
+      player.volume(30);
       break;
     case WAIT_BACKGROUND_AUDIO_FINISHED:
       break;
