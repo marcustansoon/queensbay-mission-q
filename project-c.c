@@ -2,6 +2,9 @@
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
 
+// Noise reduction
+int is_triggered_count = 0;
+
 // Use pins 2 and 3 to communicate with DFPlayer Mini
 static const uint8_t PIN_MP3_TX = 2;  // Connects to module's RX
 static const uint8_t PIN_MP3_RX = 3;  // Connects to module's TX
@@ -78,12 +81,22 @@ void loop() {
       nextState = WAIT_SIREN_TRIGGER;
       break;
     case WAIT_SIREN_TRIGGER:
-      // Check if siren button is triggered (active LOW)
-      if (digitalRead(PIN_D12) == LOW)
-        nextState = PLAY_SIREN_AUDIO;
       // Repeat background music
-      else if (!isMusicPlaying)
+      if (!isMusicPlaying) {
+        is_triggered_count = 0;
         nextState = PLAY_BACKGROUND_AUDIO_1;
+      // Check if siren button is triggered (active LOW)
+      } else if (digitalRead(PIN_D12) == LOW) {
+        is_triggered_count += 1;
+        if(is_triggered_count > 5000)
+          nextState = PLAY_SIREN_AUDIO;
+        else
+          nextState = WAIT_SIREN_TRIGGER;
+      } else {
+        // Reset trigger count
+        is_triggered_count = 0;
+        nextState = WAIT_SIREN_TRIGGER;
+      }
       break;
     case PLAY_SIREN_AUDIO:
       nextState = WAIT_SIREN_AUDIO_FINISHED;
