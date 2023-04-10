@@ -88,7 +88,7 @@ void loop() {
       // Check if siren button is triggered (active LOW)
       } else if (digitalRead(PIN_D12) == LOW) {
         is_triggered_count += 1;
-        if(is_triggered_count > 5000)
+        if(is_triggered_count > 2500)
           nextState = PLAY_SIREN_AUDIO;
         else
           nextState = WAIT_SIREN_TRIGGER;
