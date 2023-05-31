@@ -82,9 +82,6 @@ void loop() {
       nextState = WAIT_SIREN_TRIGGER;
       break;
     case WAIT_SIREN_TRIGGER:
-      // Check if siren button is triggered (active LOW)
-      is_triggered_count = (digitalRead(PIN_D12) == LOW) ? is_triggered_count + 1 : 0;
-
       // Check if siren button is triggered for a certain amount of times
       if (is_triggered_count > SIREN_BUTTON_TRIGGER_COUNT)
         nextState = PLAY_SIREN_AUDIO;
@@ -127,8 +124,11 @@ void loop() {
       isMusicPlaying = true;            // Indicate music is playing
       Serial.println("Playing bg song...");
       player.volume(30);
+      is_triggered_count = 0;           // Reset trigger count
       break;
     case WAIT_SIREN_TRIGGER:
+      // Check if siren button is triggered (active LOW)
+      is_triggered_count = (digitalRead(PIN_D12) == LOW) ? is_triggered_count + 1 : 0;
       break;
     case PLAY_SIREN_AUDIO:
       currentMusic = SIREN_AUDIO;  // Indicate siren music
@@ -136,6 +136,7 @@ void loop() {
       isMusicPlaying = true;       // Indicate music is playing
       Serial.println("Playing siren song...");
       player.volume(20);
+      is_triggered_count = 0;      // Reset trigger count
       break;
     case WAIT_SIREN_AUDIO_FINISHED:
       break;
