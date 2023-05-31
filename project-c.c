@@ -88,6 +88,8 @@ void loop() {
       // Repeat background music
       else if (!isMusicPlaying)
         nextState = PLAY_BACKGROUND_AUDIO_1;
+      else
+        nextState = WAIT_SIREN_TRIGGER;
       break;
     case PLAY_SIREN_AUDIO:
       nextState = WAIT_SIREN_AUDIO_FINISHED;
