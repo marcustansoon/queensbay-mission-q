@@ -2,9 +2,6 @@
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
 
-// Noise reduction
-int is_triggered_count = 0;
-
 // Use pins 2 and 3 to communicate with DFPlayer Mini
 static const uint8_t PIN_MP3_TX = 2;  // Connects to module's RX
 static const uint8_t PIN_MP3_RX = 3;  // Connects to module's TX
@@ -38,6 +35,10 @@ enum AUDIO currentMusic = BACKGROUND_AUDIO;
 
 // Indicate whether a music is currently playing
 bool isMusicPlaying = false;
+
+// Noise filtering
+int is_triggered_count = 0;
+static const int SIREN_BUTTON_TRIGGER_COUNT = 100;
 
 void setup() {
   // Set pin to input and pullup by default
@@ -81,22 +82,15 @@ void loop() {
       nextState = WAIT_SIREN_TRIGGER;
       break;
     case WAIT_SIREN_TRIGGER:
-      // Repeat background music
-      if (!isMusicPlaying) {
-        is_triggered_count = 0;
-        nextState = PLAY_BACKGROUND_AUDIO_1;
       // Check if siren button is triggered (active LOW)
-      } else if (digitalRead(PIN_D12) == LOW) {
-        is_triggered_count += 1;
-        if(is_triggered_count > 2500)
-          nextState = PLAY_SIREN_AUDIO;
-        else
-          nextState = WAIT_SIREN_TRIGGER;
-      } else {
-        // Reset trigger count
-        is_triggered_count = 0;
-        nextState = WAIT_SIREN_TRIGGER;
-      }
+      is_triggered_count = (digitalRead(PIN_D12) == LOW) ? is_triggered_count + 1 : 0;
+
+      // Check if siren button is triggered for a certain amount of times
+      if (is_triggered_count > SIREN_BUTTON_TRIGGER_COUNT)
+        nextState = PLAY_SIREN_AUDIO;
+      // Repeat background music
+      else if (!isMusicPlaying)
+        nextState = PLAY_BACKGROUND_AUDIO_1;
       break;
     case PLAY_SIREN_AUDIO:
       nextState = WAIT_SIREN_AUDIO_FINISHED;
@@ -141,7 +135,7 @@ void loop() {
       player.play(SIREN_AUDIO);    // Play siren music
       isMusicPlaying = true;       // Indicate music is playing
       Serial.println("Playing siren song...");
-      player.volume(16);
+      player.volume(20);
       break;
     case WAIT_SIREN_AUDIO_FINISHED:
       break;
